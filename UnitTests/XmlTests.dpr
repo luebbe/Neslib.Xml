@@ -1,13 +1,18 @@
 program XmlTests;
 
 {$IFDEF MSWINDOWS}
+  {$STRONGLINKTYPES ON}
+  {$IFNDEF TESTINSIGHT}
   {$APPTYPE CONSOLE}
+  {$ENDIF}
   {$WARN SYMBOL_PLATFORM OFF}
 {$ENDIF}
 
 uses
   System.SysUtils,
-  {$IF Defined(MACOS) or Defined(ANDROID)}
+  {$IF Defined(TESTINSIGHT)}
+  TestInsight.DUnitX,
+  {$ELSE IF Defined(MACOS) or Defined(ANDROID)}
   FMX.Forms,
   DUnitX.Loggers.MobileGUI,
   {$ELSE}
@@ -24,6 +29,9 @@ uses
 {$R *.res}
 
 begin
+{$IF Defined(TESTINSIGHT)}
+  TestInsight.DUnitX.RunRegisteredTests;
+{$ELSE}
   TDUnitX.CheckCommandLine;
 
   {$IF Defined(MACOS) or Defined(ANDROID)}
@@ -53,4 +61,5 @@ begin
       Writeln(E.ClassName, ': ', E.Message);
   end;
   {$ENDIF}
+{$ENDIF}
 end.
