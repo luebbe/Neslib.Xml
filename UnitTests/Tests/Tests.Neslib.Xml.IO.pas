@@ -38,6 +38,7 @@ type
     [Test] procedure TestParseError_ElementNameMismatch;
     [Test] procedure TestIssue9_CommentsAtStart;
     [Test] procedure TestIssue11;
+    [Test] procedure TestDoctype;
   end;
 
 type
@@ -241,6 +242,35 @@ begin
     else
       Assert.Fail('EXmlParserError expected');
   end;
+end;
+
+procedure TTestXmlReader.TestDoctype;
+const
+  CDocType = 'bookinfo SYSTEM "../../tools/dtd/dblite.dtd"';
+  CXml = '<?xml version="1.0" encoding="utf-8"?>'+ sLineBreak +
+    '<!DOCTYPE ' + CDocType + '>' + sLineBreak +
+    '<bookinfo>'+ sLineBreak +
+    '  <pubdate>'+ sLineBreak +
+    '    <?dbtimestamp format="d. B Y"?>'+ sLineBreak +
+    '  </pubdate>'+ sLineBreak +
+    '</bookinfo>';
+begin
+  var Doc := TXmlDocument.Create;
+  Doc.Parse(CXml);
+  {   Check DOCTYPE value }
+  var Root := Doc.Root;
+  var Node := Root.FirstChild;
+  Assert.IsTrue(Node.Parent = Root);
+  Assert.AreEqual<TXmlNodeType>(TXmlNodeType.Comment, Node.NodeType);
+  Assert.AreEqual<XmlString>(CDocType, Node.Value);
+  Assert.IsTrue(Node.FirstAttribute = nil);
+  Assert.IsTrue(Node.FirstChild = nil);
+  {   Check bookinfo node }
+  Node := Node.NextSibling;
+  Assert.AreEqual<TXmlNodeType>(TXmlNodeType.Element, Node.NodeType);
+  Assert.AreEqual<XmlString>('bookinfo', Node.Value);
+  Assert.IsTrue(Node.FirstAttribute = nil);
+  Assert.IsFalse(Node.FirstChild = nil);
 end;
 
 procedure TTestXmlReader.TestIssue11;
