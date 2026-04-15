@@ -840,18 +840,40 @@ end;
 
 procedure TXmlReader.ParseDocType;
 const
-  CLength = 9;
+  CLength = 8;
 begin
   var P := FCurrent;
-  if StrLIComp(P, '!DOCTYPE ', CLength) <> 0 then
+  if StrLIComp(P, '!DOCTYPE', CLength) <> 0 then
     ParseError(@RS_XML_INVALID_DOCTYPE);
 
   Inc(P, CLength);
+
+  { Next character must either be whitespace or a closing bracket }
+  if (P^ > ' ') and (P^ <> '>') then
+    ParseError(@RS_XML_INVALID_DOCTYPE);
+
+  { Skip control characters (includes spaces, tabs and line breaks)}
+  while (P^ <> #0) and (P^ <= ' ') do
+    Inc(P);
+
   var Start := P;
 
   { Move to end of doctype. }
   while (P^ <> #0) and (P^ <> '>') do
+  begin
+    { Skip inline DTD }
+    if (P^ = '[') then
+    begin
+      while (P^ <> #0) and (P^ <> ']') do
+        Inc(P);
+
+      if (P^ = #0) then
+        ParseError(@RS_XML_UNEXPECTED_EOF);
+      Dec(P);
+    end;
+
     Inc(P);
+  end;
 
   if (P^ = #0) then
     ParseError(@RS_XML_UNEXPECTED_EOF);

@@ -38,7 +38,23 @@ type
     [Test] procedure TestParseError_ElementNameMismatch;
     [Test] procedure TestIssue9_CommentsAtStart;
     [Test] procedure TestIssue11;
-    [Test] procedure TestDoctype;
+
+    [Test]
+    [TestCase('Empty', '')]
+    [TestCase('Invalid', 'X,,,Invalid DOCTYPE in XML data.,1,39')]
+    [TestCase('Valid DTD', ' ,bookinfo SYSTEM "../../tools/dtd/dblite.dtd"')]
+    [TestCase('Inline valid definition', ' ,element [DEFINITION]')]
+    [TestCase('Inline missing definition close', ' ,element [DEFINITION,,Unexpected end of XML data.,1,39')]
+
+    // Invalid XML. The parser skips everything between
+    // the first closing ']' and the next closing '>'
+    [TestCase('Inline double definition close', ' ,element [DEFINITION]],')]
+    [TestCase('Inline double definition close junk', ' ,element [DEFINITION]###]!!!,')]
+
+    // Invalid XML. The parser skips the double closing '>>' bracket
+    // and returns a text node, which is not correct and which is why this testis disabled
+    //[TestCase('Inline double doctype close', ' ,element [DEFINITION],>')]
+    procedure TestDoctype(const APrefix, AContent, ASuffix, AErrorMsg: String; const ALine, AColumn: Integer);
   end;
 
 type
@@ -57,6 +73,9 @@ type
   end;
 
 implementation
+
+uses
+  System.SysUtils;
 
 { TTestXmlReader }
 
@@ -244,33 +263,48 @@ begin
   end;
 end;
 
-procedure TTestXmlReader.TestDoctype;
+procedure TTestXmlReader.TestDoctype(
+  const APrefix, AContent, ASuffix, AErrorMsg: String;
+  const ALine, AColumn: Integer);
 const
-  CDocType = 'bookinfo SYSTEM "../../tools/dtd/dblite.dtd"';
-  CXml = '<?xml version="1.0" encoding="utf-8"?>'+ sLineBreak +
-    '<!DOCTYPE ' + CDocType + '>' + sLineBreak +
-    '<bookinfo>'+ sLineBreak +
-    '  <pubdate>'+ sLineBreak +
-    '    <?dbtimestamp format="d. B Y"?>'+ sLineBreak +
-    '  </pubdate>'+ sLineBreak +
+  CXml = '<?xml version="1.0" encoding="utf-8"?>' + sLineBreak +
+    '<!DOCTYPE%s%s%s>' + sLineBreak +
+    '<bookinfo>' + sLineBreak +
+    '  <pubdate>' + sLineBreak +
+    '    <?dbtimestamp format="d. B Y"?>' + sLineBreak +
+    '  </pubdate>' + sLineBreak +
     '</bookinfo>';
 begin
   var Doc := TXmlDocument.Create;
-  Doc.Parse(CXml);
-  {   Check DOCTYPE value }
-  var Root := Doc.Root;
-  var Node := Root.FirstChild;
-  Assert.IsTrue(Node.Parent = Root);
-  Assert.AreEqual<TXmlNodeType>(TXmlNodeType.Comment, Node.NodeType);
-  Assert.AreEqual<XmlString>(CDocType, Node.Value);
-  Assert.IsTrue(Node.FirstAttribute = nil);
-  Assert.IsTrue(Node.FirstChild = nil);
-  {   Check bookinfo node }
-  Node := Node.NextSibling;
-  Assert.AreEqual<TXmlNodeType>(TXmlNodeType.Element, Node.NodeType);
-  Assert.AreEqual<XmlString>('bookinfo', Node.Value);
-  Assert.IsTrue(Node.FirstAttribute = nil);
-  Assert.IsFalse(Node.FirstChild = nil);
+  var Xml := Format(CXml, [APrefix, AContent, ASuffix]);
+
+  try
+    Doc.Parse(Xml);
+
+    {   Check DOCTYPE value }
+    var Root := Doc.Root;
+    var Node := Root.FirstChild;
+    Assert.IsTrue(Node.Parent = Root);
+    Assert.AreEqual<TXmlNodeType>(TXmlNodeType.Comment, Node.NodeType);
+    Assert.AreEqual<XmlString>(AContent, Node.Value);
+    Assert.IsTrue(Node.FirstAttribute = nil);
+    Assert.IsTrue(Node.FirstChild = nil);
+    {   Check bookinfo node }
+    Node := Node.NextSibling;
+    Assert.AreEqual<TXmlNodeType>(TXmlNodeType.Element, Node.NodeType);
+    Assert.AreEqual<XmlString>('bookinfo', Node.Value);
+    Assert.IsTrue(Node.FirstAttribute = nil);
+    Assert.IsFalse(Node.FirstChild = nil);
+  except
+    on E: EXmlParserError do
+    begin
+      Assert.AreEqual(AErrorMsg, E.Message);
+      Assert.AreEqual(ALine, E.LineNumber);
+      Assert.AreEqual(AColumn, E.ColumnNumber);
+    end
+    else
+      Assert.Fail('EXmlParserError expected');
+  end;
 end;
 
 procedure TTestXmlReader.TestIssue11;
