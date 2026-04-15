@@ -275,12 +275,27 @@ const
     '  </pubdate>' + sLineBreak +
     '</bookinfo>';
 begin
+  var Success := false;
   var Doc := TXmlDocument.Create;
   var Xml := Format(CXml, [APrefix, AContent, ASuffix]);
 
   try
     Doc.Parse(Xml);
+    Success := true;
 
+  except
+    on E: EXmlParserError do
+    begin
+      Assert.AreEqual(AErrorMsg, E.Message);
+      Assert.AreEqual(ALine, E.LineNumber);
+      Assert.AreEqual(AColumn, E.ColumnNumber);
+    end
+    else
+      Assert.Fail('EXmlParserError expected');
+  end;
+
+  if Success then
+  begin
     {   Check DOCTYPE value }
     var Root := Doc.Root;
     var Node := Root.FirstChild;
@@ -295,15 +310,6 @@ begin
     Assert.AreEqual<XmlString>('bookinfo', Node.Value);
     Assert.IsTrue(Node.FirstAttribute = nil);
     Assert.IsFalse(Node.FirstChild = nil);
-  except
-    on E: EXmlParserError do
-    begin
-      Assert.AreEqual(AErrorMsg, E.Message);
-      Assert.AreEqual(ALine, E.LineNumber);
-      Assert.AreEqual(AColumn, E.ColumnNumber);
-    end
-    else
-      Assert.Fail('EXmlParserError expected');
   end;
 end;
 
