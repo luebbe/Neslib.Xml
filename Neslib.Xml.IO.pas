@@ -110,6 +110,7 @@ type
     procedure ParseEndElement;
     procedure ParseComment;
     procedure ParseCData;
+    procedure ParseDocType;
     procedure AddAttribute(const ANameStart, ANameEnd, AValueStart,
       AValueEnd: PXmlChar);
   protected
@@ -327,6 +328,7 @@ resourcestring
   RS_XML_CHARACTER_REFERENCE   = 'Invalid character reference in XML data.';
   RS_XML_INVALID_COMMENT       = 'Invalid comment in XML data.';
   RS_XML_INVALID_CDATA         = 'Invalid CDATA in XML data.';
+  RS_XML_INVALID_DOCTYPE       = 'Invalid DOCTYPE in XML data.';
   RS_XML_EQUAL_EXPECTED        = 'Expected "=" after XML attribute name.';
   RS_XML_INVALID_QUOTE         = 'Attribute value must be enclosed in single or double quotes.';
   RS_XML_INVALID_END_ELEMENT   = 'End element is not allowed here.';
@@ -758,6 +760,12 @@ begin
              AState := TXmlReaderState.CData;
              Exit(True);
            end
+           else if (P[1].ToUpper = 'D') then
+           begin
+             ParseDocType;
+             AState := TXmlReaderState.Comment;
+             Exit(True);
+           end
            else
            begin
              ParseComment;
@@ -827,6 +835,50 @@ begin
   if (P^ = #0) then
     ParseError(@RS_XML_UNEXPECTED_EOF);
 
+  FCurrent := P + 1;
+end;
+
+procedure TXmlReader.ParseDocType;
+const
+  CLength = 8;
+begin
+  var P := FCurrent;
+  if StrLIComp(P, '!DOCTYPE', CLength) <> 0 then
+    ParseError(@RS_XML_INVALID_DOCTYPE);
+
+  Inc(P, CLength);
+
+  { Next character must either be whitespace or a closing bracket }
+  if (P^ > ' ') and (P^ <> '>') then
+    ParseError(@RS_XML_INVALID_DOCTYPE);
+
+  { Skip control characters (includes spaces, tabs and line breaks)}
+  while (P^ <> #0) and (P^ <= ' ') do
+    Inc(P);
+
+  var Start := P;
+
+  { Move to end of doctype. }
+  while (P^ <> #0) and (P^ <> '>') do
+  begin
+    { Skip inline DTD }
+    if (P^ = '[') then
+    begin
+      while (P^ <> #0) and (P^ <> ']') do
+        Inc(P);
+
+      if (P^ = #0) then
+        ParseError(@RS_XML_UNEXPECTED_EOF);
+      Dec(P);
+    end;
+
+    Inc(P);
+  end;
+
+  if (P^ = #0) then
+    ParseError(@RS_XML_UNEXPECTED_EOF);
+
+  SetString(FValueString, Start, P - Start);
   FCurrent := P + 1;
 end;
 
