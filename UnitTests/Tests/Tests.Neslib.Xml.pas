@@ -406,6 +406,12 @@ begin
 
   Node := Doc.DocumentElement.ElementByAttribute('attr', 'D');
   Assert.AreEqual<XmlString>('', Node.Value);
+
+  Node := Doc.DocumentElement.ElementByAttribute('attr', 'a');
+  Assert.AreEqual<XmlString>('', Node.Value);
+
+  Node := Doc.DocumentElement.ElementByAttribute('attr', 'a', true);
+  Assert.AreEqual<XmlString>('node1', Node.Value);
 end;
 
 procedure TTestXmlNode.TestElementByAttributeAndElement;
@@ -427,6 +433,12 @@ begin
 
   Node := Doc.DocumentElement.ElementByAttribute('foo', 'attr', 'C');
   Assert.AreEqual(0, Node.AttributeByName('id').ToInteger);
+
+  Node := Doc.DocumentElement.ElementByAttribute('node', 'attr', 'a');
+  Assert.AreEqual<XmlString>('', Node.Value);
+
+  Node := Doc.DocumentElement.ElementByAttribute('node', 'attr', 'a', true);
+  Assert.AreEqual(1, Node.AttributeByName('id').ToInteger);
 end;
 
 procedure TTestXmlNode.TestElementByName;

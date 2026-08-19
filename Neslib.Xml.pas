@@ -320,7 +320,7 @@ type
         The first child element with an attribute with the given name and value,
         or nil if there is none. }
     function ElementByAttribute(const AAttributeName,
-      AAttributeValue: XmlString): TXmlNode; overload;
+      AAttributeValue: XmlString; AIgnoreCase: Boolean = false): TXmlNode; overload;
 
     { Returns the first child element of a given name, and with an attribute
       with a given name and value.
@@ -334,7 +334,7 @@ type
         The first child element with the given name that has an attribute with
         the given atrribute name and value, or nil if there is none. }
     function ElementByAttribute(const AElementName, AAttributeName,
-      AAttributeValue: XmlString): TXmlNode; overload;
+      AAttributeValue: XmlString; AIgnoreCase: Boolean = false): TXmlNode; overload;
 
     { Returns the next sibling element with a given name.
 
@@ -1274,7 +1274,8 @@ begin
 end;
 
 function TXmlNode.ElementByAttribute(const AAttributeName,
-  AAttributeValue: XmlString): TXmlNode;
+  AAttributeValue: XmlString;
+  AIgnoreCase: Boolean): TXmlNode;
 begin
   Result.FNode := nil;
   if (FNode = nil) or (GetNodeType <> TXmlNodeType.Element) then
@@ -1292,8 +1293,11 @@ begin
     var Attr := Result.FirstAttribute;
     while (Attr <> nil) do
     begin
-      if (Attr.GetNameIndex = NameIndex) and (Attr.Value = AAttributeValue) then
-        Exit;
+      if (Attr.GetNameIndex = NameIndex) then
+        if AIgnoreCase and SameText(Attr.Value, AAttributeValue) then
+          Exit
+        else if SameStr(Attr.Value, AAttributeValue) then
+          Exit;
 
       Attr := Attr.Next;
     end;
@@ -1302,7 +1306,8 @@ begin
 end;
 
 function TXmlNode.ElementByAttribute(const AElementName, AAttributeName,
-  AAttributeValue: XmlString): TXmlNode;
+  AAttributeValue: XmlString;
+  AIgnoreCase: Boolean): TXmlNode;
 begin
   Result.FNode := nil;
   if (FNode = nil) or (GetNodeType <> TXmlNodeType.Element) then
@@ -1327,7 +1332,9 @@ begin
       var Attr := Result.FirstAttribute;
       while (Attr <> nil) do
       begin
-        if (Attr.GetNameIndex = AttrNameIndex) and (Attr.Value = AAttributeValue) then
+        if AIgnoreCase and SameText(Attr.Value, AAttributeValue) then
+          Exit
+        else if SameStr(Attr.Value, AAttributeValue) then
           Exit;
 
         Attr := Attr.Next;
