@@ -315,12 +315,14 @@ type
       Parameters:
         AAttributeName: the name of the attribute to search for.
         AAttributeValue: the value of the attribute to search for.
+        AIgnoreValueCase: whether to ignore the case of AAttributeValue.
+          Searching for AAttributeName is always case-sensitive.
 
       Returns:
         The first child element with an attribute with the given name and value,
         or nil if there is none. }
     function ElementByAttribute(const AAttributeName,
-      AAttributeValue: XmlString; AIgnoreCase: Boolean = false): TXmlNode; overload;
+      AAttributeValue: XmlString; const AIgnoreValueCase: Boolean = False): TXmlNode; overload;
 
     { Returns the first child element of a given name, and with an attribute
       with a given name and value.
@@ -329,12 +331,14 @@ type
         AElementName: the name of the element to search for.
         AAttributeName: the name of the attribute to search for.
         AAttributeValue: the value of the attribute to search for.
+        AIgnoreValueCase: whether to ignore the case of AAttributeValue.
+          Searching for AElementName and AAttributeName is always case-sensitive.
 
       Returns:
         The first child element with the given name that has an attribute with
         the given atrribute name and value, or nil if there is none. }
     function ElementByAttribute(const AElementName, AAttributeName,
-      AAttributeValue: XmlString; AIgnoreCase: Boolean = false): TXmlNode; overload;
+      AAttributeValue: XmlString; const AIgnoreValueCase: Boolean = False): TXmlNode; overload;
 
     { Returns the next sibling element with a given name.
 
@@ -1274,8 +1278,7 @@ begin
 end;
 
 function TXmlNode.ElementByAttribute(const AAttributeName,
-  AAttributeValue: XmlString;
-  AIgnoreCase: Boolean): TXmlNode;
+  AAttributeValue: XmlString; const AIgnoreValueCase: Boolean): TXmlNode;
 begin
   Result.FNode := nil;
   if (FNode = nil) or (GetNodeType <> TXmlNodeType.Element) then
@@ -1294,10 +1297,12 @@ begin
     while (Attr <> nil) do
     begin
       if (Attr.GetNameIndex = NameIndex) then
-        if AIgnoreCase and SameText(Attr.Value, AAttributeValue) then
+      begin
+        if (AIgnoreValueCase) and SameText(Attr.Value, AAttributeValue) then
           Exit
         else if SameStr(Attr.Value, AAttributeValue) then
           Exit;
+      end;
 
       Attr := Attr.Next;
     end;
@@ -1306,8 +1311,7 @@ begin
 end;
 
 function TXmlNode.ElementByAttribute(const AElementName, AAttributeName,
-  AAttributeValue: XmlString;
-  AIgnoreCase: Boolean): TXmlNode;
+  AAttributeValue: XmlString; const AIgnoreValueCase: Boolean): TXmlNode;
 begin
   Result.FNode := nil;
   if (FNode = nil) or (GetNodeType <> TXmlNodeType.Element) then
@@ -1332,7 +1336,7 @@ begin
       var Attr := Result.FirstAttribute;
       while (Attr <> nil) do
       begin
-        if AIgnoreCase and SameText(Attr.Value, AAttributeValue) then
+        if (AIgnoreValueCase) and SameText(Attr.Value, AAttributeValue) then
           Exit
         else if SameStr(Attr.Value, AAttributeValue) then
           Exit;

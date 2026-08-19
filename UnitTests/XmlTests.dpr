@@ -12,7 +12,7 @@ uses
   System.SysUtils,
   {$IF Defined(TESTINSIGHT)}
   TestInsight.DUnitX,
-  {$ELSE IF Defined(MACOS) or Defined(ANDROID)}
+  {$ELSEIF Defined(MACOS) or Defined(ANDROID)}
   FMX.Forms,
   DUnitX.Loggers.MobileGUI,
   {$ELSE}

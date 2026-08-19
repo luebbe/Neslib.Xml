@@ -410,7 +410,7 @@ begin
   Node := Doc.DocumentElement.ElementByAttribute('attr', 'a');
   Assert.AreEqual<XmlString>('', Node.Value);
 
-  Node := Doc.DocumentElement.ElementByAttribute('attr', 'a', true);
+  Node := Doc.DocumentElement.ElementByAttribute('attr', 'a', True);
   Assert.AreEqual<XmlString>('node1', Node.Value);
 end;
 
@@ -437,7 +437,7 @@ begin
   Node := Doc.DocumentElement.ElementByAttribute('node', 'attr', 'a');
   Assert.AreEqual<XmlString>('', Node.Value);
 
-  Node := Doc.DocumentElement.ElementByAttribute('node', 'attr', 'a', true);
+  Node := Doc.DocumentElement.ElementByAttribute('node', 'attr', 'a', True);
   Assert.AreEqual(1, Node.AttributeByName('id').ToInteger);
 end;
 
